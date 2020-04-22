@@ -1,4 +1,4 @@
-module namhum
+module github.com/nipeharefa/jenkins-nahum
 
 go 1.12
 
