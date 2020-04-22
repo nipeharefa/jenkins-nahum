@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -15,30 +16,15 @@ Jika ditemukan maka di pull
 */
 
 var sess *session.Session
+var build string
 
 func main() {
 
+	fmt.Println("Jenkins tool ", build)
 	cfg := aws.NewConfig()
 	cfg.Region = aws.String("ap-southeast-1")
 
 	sess, _ = session.NewSession(cfg)
-	// svc := s3.New(sess)
-
-	// checksum := checksumFunc("./yarn.lock")
-
-	// fileName := fmt.Sprintf("%s.zip", checksum)
-	// input := &s3.HeadObjectInput{
-	// 	Bucket: aws.String("s-dev.ottenstatic.com"),
-	// 	Key:    aws.String(fileName),
-	// }
-
-	// _, err := svc.HeadObject(input)
-	// if err != nil {
-	// 	return
-	// }
-
-	// fmt.Println(checksum)
-
 	arg := os.Args[1]
 
 	switch arg {

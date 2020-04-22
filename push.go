@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -16,6 +17,15 @@ func push() {
 	bucketName := os.Getenv("BUCKET_NAME")
 
 	filename := fmt.Sprintf("otten_web_%s.zip", checksumFunc("./yarn.lock"))
+	isExist := headObject(filename)
+
+	if isExist {
+		fmt.Println("Build cache exist...")
+		return
+	}
+
+	fmt.Println("Populating build cache...")
+
 	cc(filename)
 
 	f, err := os.Open(filename)
@@ -25,6 +35,8 @@ func push() {
 	}
 
 	defer f.Close()
+
+	fmt.Println("Uploading build cache")
 
 	buff, _ := ioutil.ReadAll(f)
 
@@ -38,12 +50,18 @@ func push() {
 
 	svc := s3.New(sess)
 
-	result, err := svc.PutObject(input)
+	startTime := time.Now()
+
+	_, err = svc.PutObject(input)
 	if err != nil {
 		logrus.Error(err)
 	}
 
 	defer os.Remove(filename)
 
-	fmt.Println(result)
+	elapsed := time.Since(startTime)
+
+	execTimeStr := fmt.Sprintf("Build cache uploaded: %fs", elapsed.Seconds())
+
+	fmt.Println(execTimeStr)
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"compress/flate"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -15,11 +14,18 @@ import (
 )
 
 func pull() {
-	log.Info("Pull")
+	fmt.Println("Looking up build cache...")
 	bucketName := os.Getenv("BUCKET_NAME")
 
 	filename := fmt.Sprintf("otten_web_%s.zip", checksumFunc("./yarn.lock"))
 	svc := s3.New(sess)
+
+	isExist := headObject(filename)
+
+	if !isExist {
+		fmt.Println("Build cache doest not exist...")
+		return
+	}
 
 	inputObj := &s3.GetObjectInput{
 		Bucket: aws.String(bucketName),
@@ -48,17 +54,24 @@ func pull() {
 
 	f.Close()
 
-	z := archiver.Zip{
-		CompressionLevel:       flate.DefaultCompression,
-		MkdirAll:               true,
-		SelectiveCompression:   true,
-		ContinueOnError:        false,
-		OverwriteExisting:      false,
-		ImplicitTopLevelFolder: true,
-	}
-
-	err = z.Unarchive(filename, ".")
+	err = archiver.Unarchive(filename, ".")
 	if err != nil {
 		log.Error(err)
 	}
+}
+
+func headObject(filename string) bool {
+
+	bucketName := os.Getenv("BUCKET_NAME")
+
+	inputObject := &s3.HeadObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(filename),
+	}
+
+	svc := s3.New(sess)
+
+	_, err := svc.HeadObject(inputObject)
+
+	return err == nil
 }
